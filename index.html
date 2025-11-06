@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>העלאת קובץ אודיו זמנית</title>
+  <title>העלאת אודיו זמנית</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; }
     .card { max-width: 640px; margin:auto; border:1px solid #ddd; border-radius:12px; padding:1.25rem; }
@@ -40,13 +40,15 @@
     const fileLink = document.getElementById("fileLink");
     const player = document.getElementById("player");
 
-    async function uploadToTransferSH(file) {
+    async function uploadTo0x0(file) {
       const formData = new FormData();
-      formData.append("file", file, file.name);
+      // נשלח בשם לועזי כדי למנוע בעיות קידוד
+      const safeName = "audiofile." + file.name.split(".").pop();
+      formData.append("file", file, safeName);
 
-      const res = await fetch("https://transfer.sh/" + encodeURIComponent(file.name), {
-        method: "PUT",
-        body: file,
+      const res = await fetch("https://0x0.st", {
+        method: "POST",
+        body: formData,
       });
 
       if (!res.ok) throw new Error("שגיאת רשת: " + res.status);
@@ -66,12 +68,12 @@
       resultEl.style.display = "none";
 
       try {
-        const url = await uploadToTransferSH(file);
+        const url = await uploadTo0x0(file);
         fileLink.href = url;
         fileLink.textContent = url;
         player.src = url;
         resultEl.style.display = "block";
-        statusEl.textContent = "ההעלאה הצליחה! הקובץ יימחק אוטומטית בעוד 14 ימים.";
+        statusEl.textContent = "הקובץ הועלה בהצלחה!";
       } catch (err) {
         console.error(err);
         statusEl.innerHTML = '<span class="error">שגיאה: ' + err.message + "</span>";
