@@ -10,21 +10,21 @@
     label { display:block; margin:.75rem 0 .25rem; font-weight:600; }
     input[type=file] { padding:.5rem; border:1px dashed #bbb; border-radius:8px; background:#fafafa; width:100%; }
     button { margin-top:1rem; padding:.6rem 1rem; border-radius:8px; border:1px solid #ccc; background:#111; color:#fff; cursor:pointer; }
+    button:disabled { opacity:0.5; cursor:not-allowed; }
     #result { margin-top:1rem; padding:.75rem; background:#f7f7f7; border-radius:8px; word-break:break-all; }
     audio { width:100%; margin-top:1rem; }
     .error { color:#b00020; }
+    .success { color:#2e7d32; }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>העלה קובץ אודיו זמני וקבל קישור לניגון</h2>
-
     <form id="uploadForm">
       <label for="file">בחר קובץ אודיו</label>
       <input id="file" name="file" type="file" accept="audio/*" />
       <button id="submitBtn" type="submit">העלה וקבל קישור</button>
     </form>
-
     <div id="status" style="margin-top:.5rem;"></div>
     <div id="result" style="display:none;">
       <p><strong>קישור לניגון:</strong></p>
@@ -32,21 +32,20 @@
       <audio id="player" controls></audio>
     </div>
   </div>
-
   <script>
     const form = document.getElementById("uploadForm");
     const statusEl = document.getElementById("status");
     const resultEl = document.getElementById("result");
     const fileLink = document.getElementById("fileLink");
     const player = document.getElementById("player");
+    const submitBtn = document.getElementById("submitBtn");
 
-    async function uploadTo0x0(file) {
+    async function uploadToCatbox(file) {
       const formData = new FormData();
-      // נשלח בשם לועזי כדי למנוע בעיות קידוד
-      const safeName = "audiofile." + file.name.split(".").pop();
-      formData.append("file", file, safeName);
+      formData.append("reqtype", "fileupload");
+      formData.append("fileToUpload", file);
 
-      const res = await fetch("https://0x0.st", {
+      const res = await fetch("https://catbox.moe/user/api.php", {
         method: "POST",
         body: formData,
       });
@@ -59,24 +58,34 @@
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const file = document.getElementById("file").files[0];
+      
       if (!file) {
         statusEl.innerHTML = '<span class="error">בחר קובץ אודיו קודם.</span>';
         return;
       }
 
+      // בדיקת גודל קובץ (200MB מקסימום)
+      if (file.size > 200 * 1024 * 1024) {
+        statusEl.innerHTML = '<span class="error">הקובץ גדול מדי. מקסימום 200MB.</span>';
+        return;
+      }
+
+      submitBtn.disabled = true;
       statusEl.textContent = "מעלה...";
       resultEl.style.display = "none";
 
       try {
-        const url = await uploadTo0x0(file);
+        const url = await uploadToCatbox(file);
         fileLink.href = url;
         fileLink.textContent = url;
         player.src = url;
         resultEl.style.display = "block";
-        statusEl.textContent = "הקובץ הועלה בהצלחה!";
+        statusEl.innerHTML = '<span class="success">הקובץ הועלה בהצלחה!</span>';
       } catch (err) {
         console.error(err);
         statusEl.innerHTML = '<span class="error">שגיאה: ' + err.message + "</span>";
+      } finally {
+        submitBtn.disabled = false;
       }
     });
   </script>
